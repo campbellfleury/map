@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>soil.map</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+
+    <!-- Mapbox GL -->
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.css' rel='stylesheet' />
+
+    <!-- Mapbox Draw -->
+    <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.3.0/mapbox-gl-draw.js'></script>
+    <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.3.0/mapbox-gl-draw.css'
+        type='text/css' />
+
+    <!-- GitHub Primer CSS -->
+    <link href="https://unpkg.com/@primer/css@^16.0.0/dist/primer.css" rel="stylesheet" />
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        #buttons {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0);
+        }
+
+        #basemaps {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <div id="basemaps">
+        <details class="details-reset details-overlay">
+            <summary class="btn" aria-haspopup="true">
+              Basemap
+            </summary>
+            <div class="SelectMenu">
+              <div class="SelectMenu-modal">
+                <div id="picker" class="SelectMenu-list">
+                  <!-- <button class="SelectMenu-item" role="menuitem">Item 1</button> -->
+                  <!-- <button class="SelectMenu-item" role="menuitem">Item 2</button> -->
+                  <!-- <button class="SelectMenu-item" role="menuitem">Item 3</button> -->
+                </div>
+              </div>
+            </div>
+        </details>
+    </div>
+    <div id="buttons">
+        <div id="draw-tools" class="BtnGroup"></div>
+        <button id="cancel" class="btn" onclick='cancelDrawing()' aria-disabled="true">Cancel</button>
+        <button id="delete" onclick='deleteFeatures()' aria-disabled="true" class="btn btn-danger"
+            type="button">Delete</button>
+    </div>
+    <script>
+        const toolConfig = {
+            "block": {
+                "button": "Block",
+                "mode": "draw_polygon",
+                "message": "Drawing a block"
+            },
+            "entrance": {
+                "button": "Entrance",
+                "mode": "draw_point",
+                "message": "Locating an entrance"
+            },
+            "accessway": {
+                "button": "Accessway",
+                "mode": "draw_line_string",
+                "message": "Drawing an accessway"
+            }
+        }
+
+        const basemapConfig = {
+            "satellite": {
+                "name": "OSPRI Satellite",
+                "style": "mapbox://styles/ospri-gis/cke0twnb109a319mnlpvndu3a"
+            },
+            "ospri": {
+                "name": "OSPRI Standard",
+                "style": "mapbox://styles/ospri-gis/ckfsyic7y0iwm19n3i1wq0zdc"
+            },
+            "outdoors": {
+                "name": "Mapbox Outdoors",
+                "style": "mapbox://styles/mapbox/outdoors-v11"
+            },
+            "default": {
+                "name": "Mapbox Streets",
+                "style": "mapbox://styles/mapbox/streets-v11"
+            }
+        }
+
+        mapboxgl.accessToken = 'pk.eyJ1Ijoib3NwcmktZ2lzIiwiYSI6ImNqNjRhaWV5dTFweXcyd28zam1oaWt6aTkifQ.x7y9I6HhzU32xlZ0e3ZhFg';
+        const map = new mapboxgl.Map({
+            attributionControl: true,
+            container: 'map', // container ID
+            style: basemapConfig["default"].style, // style URL
+            center: [173.870, -40.8], // starting position [lng, lat]
+            zoom: 6 // starting zoom
+        });
+
+        let draw = new MapboxDraw({
+            displayControlsDefault: false
+        });
+
+        map.addControl(draw, 'top-left');
+
+        map.on('load', function () {
+            console.info('map loaded')
+
+            // Generate Toolbox
+            let toolbox = document.getElementById("draw-tools")
+            let tools = Object.keys(toolConfig)
+            for (let tool of tools){
+                if (document.getElementById(tool)){
+                    continue;
+                }
+                const btn = document.createElement('button')
+                btn.id = tool
+                btn.textContent = toolConfig[tool].button
+                btn.className = "BtnGroup-item btn btn-outline"
+                btn.onclick = function(e){
+                    for (let i of tools){
+                        if(document.getElementById(i)){
+                            document.getElementById(i).setAttribute('aria-selected',false)
+                        }
+                    }
+                    let element = e.srcElement
+                    let featureType = element.id
+                    console.log(featureType)
+                    element.setAttribute('aria-selected', true)
+                    document.getElementById("cancel").setAttribute('aria-disabled', false)
+                    let typeConfig = toolConfig[featureType]
+                    console.log(typeConfig.message)
+                    draw.changeMode(typeConfig.mode)
+                    map.once('draw.create', function (e) {
+                        let featureId = e.features[0].id
+                        console.log(featureId)
+                        draw.setFeatureProperty(featureId, 'type', featureType)
+                        draw.setFeatureProperty(featureId, 'id', crypto.randomUUID())
+                        document.getElementById("cancel").setAttribute('aria-disabled', true)
+                        element.setAttribute('aria-selected', false)
+                    })
+                }
+                
+                toolbox.appendChild(btn)
+            }
+
+            // Generate Basemap Picker
+            let picker = document.getElementById("picker")
+            let basemaps = Object.keys(basemapConfig)
+            for (let base of basemaps){
+                const btn = document.createElement('button')
+                btn.textContent = basemapConfig[base].name
+                btn.className = "SelectMenu-item btn"
+                btn.role = "menuitem"
+                btn.onclick = function(e){
+                    let basemap = basemapConfig[base]
+                    map.setStyle(basemap.style)
+                }
+
+                picker.appendChild(btn)
+            }
+        })
+
+        map.on('draw.selectionchange', function () {
+            if (draw.getSelectedIds().length > 0) {
+                document.getElementById("delete").setAttribute('aria-disabled', false)
+            } else {
+                document.getElementById("delete").setAttribute('aria-disabled', true)
+            }
+        })
+
+        function deleteFeatures() {
+            let selected = draw.getSelectedIds()
+            draw.delete(selected)
+            document.getElementById("delete").setAttribute('aria-disabled', true)
+        }
+
+        function cancelDrawing(){
+            draw.changeMode('simple_select')
+            document.getElementById("cancel").setAttribute('aria-disabled', true)
+        }
+    </script>
+</body>
+
+</html>
