@@ -298,6 +298,46 @@
             ]
 
         const toolConfig = {
+            "farm": {
+                "button": "Farm",
+                "mode": "draw_polygon",
+                "message": "Drawing a farm",
+                "styles": [{
+                    'id': 'farm-fill-inactive',
+                    'type': 'fill',
+                    'filter': ['all',
+                        ['==', 'active', 'false'],
+                        ['==', '$type', 'Polygon'],
+                        ['==','user_type','farm'],
+                        ['!=', 'mode', 'static']
+                    ],
+                    'paint': {
+                        'fill-color': '#000000',
+                        'fill-outline-color': '#000000',
+                        'fill-opacity': 0.1
+                    }
+                },
+                {
+                    'id': 'farm-stroke-inactive',
+                    'type': 'line',
+                    'filter': ['all',
+                    ['==', 'active', 'false'],
+                    ['==', '$type', 'Polygon'],
+                    ['==','user_type','farm'],
+                    ['!=', 'mode', 'static']
+                    ],
+                    'layout': {
+                    'line-cap': 'round',
+                    'line-join': 'round'
+                    },
+                    'paint': {
+                    'line-color': '#000000',
+                    'line-width': 2
+                    }
+                }
+
+                ]
+            },
             "block": {
                 "button": "Block",
                 "mode": "draw_polygon",
@@ -375,82 +415,6 @@
                         }
                     }
                 ]
-            },
-            "pick-up": {
-                "button": "Pick-up/Drop-off",
-                "mode": "draw_point",
-                "message": "Locating a pick-up point",
-                "styles": [
-                    {
-                        'id': 'pickup-stroke-inactive',
-                        'type': 'circle',
-                        'filter': ['all',
-                        ['==', 'active', 'false'],
-                        ['==', '$type', 'Point'],
-                        ['==', 'meta', 'feature'],
-                        ['==','user_type','pick-up'],
-                        ['!=', 'mode', 'static']
-                        ],
-                        'paint': {
-                        'circle-radius': 10,
-                        'circle-opacity': 1,
-                        'circle-color': '#fff'
-                        }
-                    },
-                    {
-                        'id': 'pickup-inactive',
-                        'type': 'circle',
-                        'filter': ['all',
-                        ['==', 'active', 'false'],
-                        ['==', '$type', 'Point'],
-                        ['==', 'meta', 'feature'],
-                        ['==','user_type','pick-up'],
-                        ['!=', 'mode', 'static']
-                        ],
-                        'paint': {
-                        'circle-radius': 7,
-                        'circle-color': '#FAB30C'
-                        }
-                    }
-                ]
-            },
-            "test": {
-                "button": "Test Location",
-                "mode": "draw_point",
-                "message": "Locating a testing point",
-                "styles": [
-                    {
-                        'id': 'test-stroke-inactive',
-                        'type': 'circle',
-                        'filter': ['all',
-                        ['==', 'active', 'false'],
-                        ['==', '$type', 'Point'],
-                        ['==', 'meta', 'feature'],
-                        ['==','user_type','test'],
-                        ['!=', 'mode', 'static']
-                        ],
-                        'paint': {
-                        'circle-radius': 10,
-                        'circle-opacity': 1,
-                        'circle-color': '#fff'
-                        }
-                    },
-                    {
-                        'id': 'test-inactive',
-                        'type': 'circle',
-                        'filter': ['all',
-                        ['==', 'active', 'false'],
-                        ['==', '$type', 'Point'],
-                        ['==', 'meta', 'feature'],
-                        ['==','user_type','test'],
-                        ['!=', 'mode', 'static']
-                        ],
-                        'paint': {
-                        'circle-radius': 7,
-                        'circle-color': '#33C103'
-                        }
-                    }
-                ]
             }
         }
 
@@ -485,8 +449,17 @@
             container: 'map', // container ID
             style: basemapConfig["default"].style, // style URL
             center: [173.870, -40.8], // starting position [lng, lat]
-            zoom: 6 // starting zoom
+            zoom: 6,
+            pitchWithRotate: false,
+            touchPitch: false,
+            dragRotate: false,
+            touchZoomRotate: false // starting zoom
         });
+
+        const nav = new mapboxgl.NavigationControl({
+            showCompass: false    
+        });
+        map.addControl(nav, 'bottom-right');
 
         let draw = new MapboxDraw({
             displayControlsDefault: false,
