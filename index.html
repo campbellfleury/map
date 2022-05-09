@@ -13,6 +13,7 @@
     <!-- Mapbox Draw -->
     <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.3.0/mapbox-gl-draw.js'></script>
     <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.3.0/mapbox-gl-draw.css' type='text/css' />
+    <script src="https://unpkg.com/mapbox-gl-draw-waypoint@1.0.3/dist/mapbox-gl-draw-waypoint.min.js"></script>
 
     <!-- GitHub Primer CSS -->
     <link href="https://unpkg.com/@primer/css@^16.0.0/dist/primer.css" rel="stylesheet" />
@@ -298,46 +299,6 @@
             ]
 
         const toolConfig = {
-            "farm": {
-                "button": "Farm",
-                "mode": "draw_polygon",
-                "message": "Drawing a farm",
-                "styles": [{
-                    'id': 'farm-fill-inactive',
-                    'type': 'fill',
-                    'filter': ['all',
-                        ['==', 'active', 'false'],
-                        ['==', '$type', 'Polygon'],
-                        ['==','user_type','farm'],
-                        ['!=', 'mode', 'static']
-                    ],
-                    'paint': {
-                        'fill-color': '#000000',
-                        'fill-outline-color': '#000000',
-                        'fill-opacity': 0.1
-                    }
-                },
-                {
-                    'id': 'farm-stroke-inactive',
-                    'type': 'line',
-                    'filter': ['all',
-                    ['==', 'active', 'false'],
-                    ['==', '$type', 'Polygon'],
-                    ['==','user_type','farm'],
-                    ['!=', 'mode', 'static']
-                    ],
-                    'layout': {
-                    'line-cap': 'round',
-                    'line-join': 'round'
-                    },
-                    'paint': {
-                    'line-color': '#000000',
-                    'line-width': 2
-                    }
-                }
-
-                ]
-            },
             "block": {
                 "button": "Block",
                 "mode": "draw_polygon",
@@ -460,11 +421,15 @@
             showCompass: false    
         });
         map.addControl(nav, 'bottom-right');
+        
+        let modes = MapboxDraw.modes;
+        modes = MapboxDrawWaypoint.enable(modes);
 
         let draw = new MapboxDraw({
             displayControlsDefault: false,
             userProperties: true,
-            styles: drawStyles
+            styles: drawStyles,
+            modes
         });
 
         map.addControl(draw, 'top-left');
